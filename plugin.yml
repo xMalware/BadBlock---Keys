@@ -2,3 +2,10 @@ name: BadKeys
 main: fr.badblock.badkeys.BadKeys
 version: 1.0
 author: xMalware
+commands:
+  badkey:
+    usage: /badkey
+    description: BadKey
+  tempfly:
+    usage: /tempfly
+    description: TempFly

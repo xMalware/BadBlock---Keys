@@ -15,6 +15,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,17 +23,84 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffectType;
 
 import fr.badblock.badkeys.Request.RequestType;
+import fr.badblock.common.shoplinker.api.objects.ShopData;
+import fr.badblock.common.shoplinker.api.objects.ShopType;
+import fr.badblock.common.shoplinker.bukkit.events.ReceivedRemoteCommandEvent;
 
 public class ClickListener implements Listener
 {
 
 	public Map<String, Long>	wait = new HashMap<>();
-	
+
+	@EventHandler
+	public void onReceiveCommand(ReceivedRemoteCommandEvent event)
+	{
+		Bukkit.getScheduler().runTask(BadKeys.instance, new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				System.out.println("ReceivedRemoteCommandEvent: A");
+
+				if (event.getShopData() == null)
+				{
+					return;
+				}
+				System.out.println("ReceivedRemoteCommandEvent: B");
+
+				ShopData shopData = event.getShopData();
+
+				System.out.println("ReceivedRemoteCommandEvent: C");
+				if (shopData.getDataType() != null && !shopData.getDataType().equals(ShopType.VOTE))
+				{
+					return;
+				}
+
+				System.out.println("ReceivedRemoteCommandEvent: D");
+				String playerName = shopData.getPlayerName();
+
+				Player player = Bukkit.getPlayer(playerName);
+
+				System.out.println("ReceivedRemoteCommandEvent: E");
+				if (player == null)
+				{
+					return;
+				}
+
+				System.out.println("ReceivedRemoteCommandEvent: F");
+				if (player.hasPermission("essentials.fly"))
+				{
+					return;
+				}
+
+				System.out.println("ReceivedRemoteCommandEvent: G");
+				TempFlyCommand.maps.put(player.getUniqueId(), System.currentTimeMillis() + (60 * 20 * 1000L));
+				System.out.println("ReceivedRemoteCommandEvent: H");
+				player.setAllowFlight(true);
+				System.out.println("ReceivedRemoteCommandEvent: I");
+				player.setFlying(true);
+				System.out.println("ReceivedRemoteCommandEvent: J");
+				player.sendMessage("§aActivation du fly pendant 30 minutes.");
+				System.out.println("ReceivedRemoteCommandEvent: K");
+			}
+		});
+	}
+
+	@EventHandler
+	public void onPlayerJoin(PlayerJoinEvent event)
+	{
+		Player player = event.getPlayer();
+		player.setAllowFlight(false);
+		player.setFlying(false);
+	}
+
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event)
 	{
@@ -143,7 +211,7 @@ public class ClickListener implements Listener
 						error.printStackTrace();
 						return;
 					}
-					
+
 					if (!wait.containsKey(player.getName().toLowerCase()) && (wait.containsKey(player.getName().toLowerCase())
 							&& wait.get(player.getName().toLowerCase()) > System.currentTimeMillis()))
 					{
@@ -151,7 +219,7 @@ public class ClickListener implements Listener
 						player.sendMessage("§7[§cClés§7] §centre chaque utilisation de clé.");
 						return;
 					}
-					
+
 					wait.put(player.getName().toLowerCase(), System.currentTimeMillis() + 30_000L);
 
 					if (!BadKeys.instance.rewards.containsKey(key))
@@ -159,9 +227,9 @@ public class ClickListener implements Listener
 						player.sendMessage("§7[§cClés§7] §cCode d'erreur (code 3) : " + key);
 						return;
 					}
-					
+
 					int rewards = BadKeys.instance.rewards.get(key);
-					
+
 					try
 					{
 						int id = resultSet.getInt("id");
@@ -188,7 +256,7 @@ public class ClickListener implements Listener
 								Thread.sleep(150);
 							}
 							final int og = l;
-							BadblockDatabase.getInstance().addRequest(new Request("SELECT * FROM `keyProbabilities` WHERE `key` = '" + key + "'",
+							BadblockDatabase.getInstance().addRequest(new Request("SELECT * FROM `keyProbabilities` WHERE `key` = '" + key + "' && server = '" + BadKeys.instance.server + "'",
 									RequestType.GETTER)
 							{
 								@Override
@@ -309,6 +377,7 @@ public class ClickListener implements Listener
 
 				for (Entry<Integer, Integer> entry : nb.entrySet())
 				{
+					
 					String rawName = Integer.toString(entry.getKey());
 					if (BadKeys.instance.names.containsKey(entry.getKey()))
 					{

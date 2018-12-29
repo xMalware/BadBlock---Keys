@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.github.paperspigot.Title;
 
 public class BadKeys extends JavaPlugin
 {
@@ -39,6 +42,9 @@ public class BadKeys extends JavaPlugin
 
 		// Reload config
 		this.reloadConfig();
+
+		getCommand("badkey").setExecutor(new BadKeyCommand());
+		getCommand("tempfly").setExecutor(new TempFlyCommand());
 
 		ConfigurationSection loc = getConfig().getConfigurationSection("locations");
 
@@ -88,9 +94,21 @@ public class BadKeys extends JavaPlugin
 		BadblockDatabase.getInstance().connect(hostname, port, username, password, db);
 
 		server = getConfig().getString("server");
-		
+
 		// Register the event
 		getServer().getPluginManager().registerEvents(new ClickListener(), this);
+
+		Bukkit.getScheduler().runTaskTimer(this, new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				for (Player player : Bukkit.getOnlinePlayers())
+				{
+					player.sendTitle(new Title("§a§lGagne des récompenses", "§aen votant pour §6BadBlock§a en faisant §d/vote", 20, 200, 20));
+				}
+			}
+		}, 20 * 60 * 90, 20 * 60 * 90);
 	}
 
 }
